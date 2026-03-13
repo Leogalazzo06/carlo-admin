@@ -40,6 +40,26 @@
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
+        /* Scrollbar personalizado — Carlo Essential */
+        .modal-glass::-webkit-scrollbar {
+            width: 4px;
+        }
+        .modal-glass::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal-glass::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #d4af37 0%, rgba(212,175,55,0.3) 100%);
+            border-radius: 99px;
+        }
+        .modal-glass::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #e8c84a 0%, #d4af37 100%);
+        }
+        /* Firefox */
+        .modal-glass {
+            scrollbar-width: thin;
+            scrollbar-color: #d4af37 transparent;
+        }
+
         /* Spinner botón guardar */
         .btn-spinner {
             display: none;
@@ -122,10 +142,27 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                <input type="text" id="admin-buscador" placeholder="Buscar pieza..." 
-                    class="bg-white/5 border border-white/10 rounded-full py-3 px-6 text-sm outline-none focus:border-[#d4af37] transition-all w-full lg:w-64">
-                
-                <button onclick="abrirModalCrear()" class="bg-[#d4af37] text-black px-8 py-3 rounded-full font-black uppercase tracking-widest text-[11px] hover:bg-white transition-all">
+                <!-- Buscador -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                    <input type="text" id="admin-buscador" placeholder="Buscar pieza..." 
+                        class="bg-white/5 border border-white/10 rounded-full py-3 pl-10 pr-5 text-sm outline-none focus:border-[#d4af37] transition-all w-full lg:w-56">
+                </div>
+                <!-- Filtro categoría -->
+                <select id="filtro-categoria" onchange="aplicarFiltros()" class="bg-[#111] border border-white/10 rounded-full py-3 px-5 text-xs outline-none focus:border-[#d4af37] transition-all text-gray-300 appearance-none cursor-pointer">
+                    <option value="">Todas las categorías</option>
+                    <option value="Relojes">Relojes</option>
+                    <option value="Pulseras">Pulseras</option>
+                    <option value="Cadenas">Cadenas</option>
+                    <option value="Llaveros">Llaveros</option>
+                </select>
+                <!-- Filtro disponibilidad -->
+                <select id="filtro-disponibilidad" onchange="aplicarFiltros()" class="bg-[#111] border border-white/10 rounded-full py-3 px-5 text-xs outline-none focus:border-[#d4af37] transition-all text-gray-300 appearance-none cursor-pointer">
+                    <option value="">Todo el stock</option>
+                    <option value="disponible">Con stock</option>
+                    <option value="sin-stock">Sin stock</option>
+                </select>
+                <button onclick="abrirModalCrear()" class="bg-[#d4af37] text-black px-8 py-3 rounded-full font-black uppercase tracking-widest text-[11px] hover:bg-white transition-all whitespace-nowrap">
                     + Nuevo producto
                 </button>
             </div>
@@ -139,8 +176,8 @@
         <div id="admin-productos" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 hidden"></div>
     </main>
 
-    <div id="modal-form" class="fixed inset-0 bg-black/90 hidden z-[110] flex items-center justify-center p-4 backdrop-blur-md">
-        <div class="modal-glass rounded-[2rem] w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl">
+    <div id="modal-form" class="fixed inset-0 bg-black/90 hidden z-[110] flex items-start justify-center p-4 pt-8 backdrop-blur-md">
+        <div class="modal-glass rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl my-auto overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
                 <h2 id="modal-titulo" class="text-2xl font-luxury gold-text">Nuevo producto</h2>
                 <button onclick="cerrarModalAdmin()" class="text-gray-500 hover:text-white text-3xl">&times;</button>
@@ -165,6 +202,7 @@
                         <option value="Relojes">Relojes</option>
                         <option value="Pulseras">Pulseras</option>
                         <option value="Cadenas">Cadenas</option>
+                        <option value="Llaveros">Llaveros</option>
                     </select>
                 </div>
 
@@ -201,6 +239,18 @@
                         </div>
                     </label>
                 </div>
+
+                <!-- VARIANTES -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Variantes <span class="text-gray-700 normal-case tracking-normal font-normal">(opcional — para modelos con distintos precios)</span></label>
+                        <button type="button" onclick="agregarVariante()" class="flex items-center gap-1.5 text-[#d4af37] text-[9px] font-black uppercase tracking-widest hover:text-white transition-colors">
+                            <i class="fa-solid fa-plus text-[8px]"></i> Agregar
+                        </button>
+                    </div>
+                    <div id="variantes-container" class="space-y-2"></div>
+                    <p id="variantes-empty" class="text-gray-700 text-[10px] italic py-2">Sin variantes. El precio principal se usará como único precio.</p>
+                </div>
             </div>
 
             <div class="mt-10 flex gap-4">
@@ -217,36 +267,67 @@
         // Configuración simplificada de imágenes (basada en tu lógica anterior)
         function triggerFileInput(n) { document.getElementById(`file-input-${n}`).click(); }
         
-        async function handleFileSelect(e, n) {
-            const file = e.target.files[0];
-            if(!file) return;
-            
-            // Efecto visual de carga
-            const zone = document.getElementById(`zone-${n}`);
-            zone.style.opacity = "0.5";
+        // Convierte cualquier imagen a WebP usando canvas antes de subirla
+        function convertirAWebP(file, calidad = 0.88) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    // Limitar tamaño máximo a 1400px en el lado más largo
+                    const MAX = 1400;
+                    let { width, height } = img;
+                    if (width > MAX || height > MAX) {
+                        if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
+                        else                 { width  = Math.round(width  * MAX / height); height = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    URL.revokeObjectURL(url);
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
+                        else      reject(new Error('No se pudo convertir a WebP'));
+                    }, 'image/webp', calidad);
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
+                img.src = url;
+            });
+        }
 
-            // Aquí iría tu lógica de Cloudinary que ya tienes configurada
-            // Para este ejemplo, simulamos la subida o usamos tu preset:
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", "uploads");
+        async function handleFileSelect(e, n) {
+            const fileOriginal = e.target.files[0];
+            if (!fileOriginal) return;
+
+            const zone = document.getElementById(`zone-${n}`);
+            const icon = zone.querySelector('i');
+            zone.style.opacity = "0.5";
+            if (icon) icon.className = 'fa-solid fa-spinner fa-spin text-[#d4af37]';
 
             try {
-                const res = await fetch("https://api.cloudinary.com/v1_1/dkqevscys/image/upload", {
-                    method: "POST",
-                    body: formData
-                });
+                // 1. Convertir a WebP en el navegador
+                const fileWebP = await convertirAWebP(fileOriginal);
+
+                // 2. Subir a Cloudinary
+                const formData = new FormData();
+                formData.append("file", fileWebP);
+                formData.append("upload_preset", "uploads");
+
+                const res  = await fetch("https://api.cloudinary.com/v1_1/dkqevscys/image/upload", { method: "POST", body: formData });
                 const data = await res.json();
-                
+
+                if (!data.secure_url) throw new Error(data.error?.message || 'Sin URL');
+
                 document.getElementById(`img${n}`).value = data.secure_url;
                 const prev = document.getElementById(`preview-${n}`);
                 prev.src = data.secure_url;
                 prev.classList.remove('hidden');
                 zone.classList.add('has-image');
-                zone.style.opacity = "1";
             } catch(err) {
-                alert("Error subiendo imagen");
+                console.error('Upload error:', err);
+                alert(`Error subiendo imagen: ${err.message}`);
+            } finally {
                 zone.style.opacity = "1";
+                if (icon) icon.className = 'fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37]';
             }
         }
 
@@ -256,6 +337,57 @@
                 if(img) img.value = "";
                 const prev = document.getElementById(`preview${i}`);
                 if(prev) prev.classList.add('hidden');
+            }
+        }
+
+        // --- VARIANTES ---
+        function agregarVariante(nombre = '', precio = '') {
+            const container = document.getElementById('variantes-container');
+            const empty = document.getElementById('variantes-empty');
+            if (empty) empty.style.display = 'none';
+
+            const idx = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'variante-row flex gap-2 items-center';
+            row.innerHTML = `
+                <input type="text" placeholder="Nombre (ej: Acero, Oro, 20cm...)" value="${nombre}"
+                    class="flex-1 bg-white/5 border border-white/10 px-4 py-3 rounded-2xl text-sm outline-none focus:border-[#d4af37] text-white variante-nombre">
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                    <input type="number" placeholder="Precio" value="${precio}"
+                        class="w-36 bg-white/5 border border-white/10 pl-8 pr-4 py-3 rounded-2xl text-sm outline-none focus:border-[#d4af37] text-white variante-precio">
+                </div>
+                <button type="button" onclick="this.parentElement.remove(); actualizarEmptyVariantes()"
+                    class="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-red-400 border border-white/10 hover:border-red-400/30 rounded-xl transition-all flex-shrink-0">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+            `;
+            container.appendChild(row);
+        }
+
+        function actualizarEmptyVariantes() {
+            const container = document.getElementById('variantes-container');
+            const empty = document.getElementById('variantes-empty');
+            if (empty) empty.style.display = container.children.length === 0 ? 'block' : 'none';
+        }
+
+        function obtenerVariantes() {
+            const rows = document.querySelectorAll('.variante-row');
+            const variantes = [];
+            rows.forEach(row => {
+                const nombre = row.querySelector('.variante-nombre').value.trim();
+                const precio = Number(row.querySelector('.variante-precio').value);
+                if (nombre && precio > 0) variantes.push({ nombre, precio });
+            });
+            return variantes;
+        }
+
+        function cargarVariantes(variantes) {
+            const container = document.getElementById('variantes-container');
+            container.innerHTML = '';
+            actualizarEmptyVariantes();
+            if (variantes && variantes.length > 0) {
+                variantes.forEach(v => agregarVariante(v.nombre, v.precio));
             }
         }
     </script>
