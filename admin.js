@@ -47,10 +47,30 @@ async function cargarProductos() {
 }
 
 function aplicarFiltros() {
-    const texto = document.getElementById('admin-buscador').value.toLowerCase();
-    productosFiltrados = productos.filter(p => p.nombre.toLowerCase().includes(texto));
-    
-    document.getElementById('stats-text').innerText = `${productosFiltrados.length} piezas en exhibición`;
+    const texto       = document.getElementById('admin-buscador').value.toLowerCase();
+    const catFiltro   = document.getElementById('filtro-categoria')?.value || '';
+    const dispFiltro  = document.getElementById('filtro-disponibilidad')?.value || '';
+
+    // estaDisponible: true si disponible===true o undefined (campo no seteado en docs viejos)
+    //                false solo si disponible===false explícito
+    const estaDisponible = p => p.disponible !== false;
+
+    productosFiltrados = productos.filter(p => {
+        const matchTexto = p.nombre.toLowerCase().includes(texto);
+        const matchCat   = !catFiltro || p.categoria === catFiltro;
+        const matchDisp  = !dispFiltro
+            || (dispFiltro === 'disponible' &&  estaDisponible(p))
+            || (dispFiltro === 'sin-stock'  && !estaDisponible(p));
+        return matchTexto && matchCat && matchDisp;
+    });
+
+    // Actualizar stats con detalle
+    const total    = productos.length;
+    const conStock = productos.filter(estaDisponible).length;
+    const sinStock = total - conStock;
+    document.getElementById('stats-text').innerText =
+        `${productosFiltrados.length} de ${total} piezas  ·  ${conStock} con stock  ·  ${sinStock} sin stock`;
+
     renderAdmin();
 }
 
@@ -79,13 +99,22 @@ function renderAdmin() {
 }
 
 // --- ACCIONES ---
+window.aplicarFiltros = aplicarFiltros;
+
 window.abrirModalCrear = () => {
     document.getElementById("modal-form").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    // Scroll al top del contenido interno
+    const inner = document.getElementById("modal-form").querySelector('.modal-glass');
+    if (inner) inner.scrollTop = 0;
     limpiarForm();
+    if (typeof cargarVariantes === 'function') cargarVariantes([]);
+    document.getElementById("modal-titulo").textContent = "Nuevo producto";
 };
 
 window.cerrarModalAdmin = () => {
     document.getElementById("modal-form").classList.add("hidden");
+    document.body.style.overflow = "";
 };
 
 window.guardarProducto = async () => {
@@ -107,6 +136,7 @@ window.guardarProducto = async () => {
         caracteristicas: document.getElementById("caracteristicas").value,
         disponible: document.getElementById("disponible").checked,
         imagenes: imgs,
+        variantes: typeof obtenerVariantes === 'function' ? obtenerVariantes() : [],
         fecha: Date.now()
     };
 
@@ -155,7 +185,15 @@ window.editarProducto = (id) => {
         }
     });
 
+    // Cargar variantes si existen
+    if (typeof cargarVariantes === 'function') cargarVariantes(p.variantes || []);
+
     document.getElementById("modal-form").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    document.getElementById("modal-titulo").textContent = "Editar producto";
+    // Scroll al top del contenido interno
+    const inner = document.getElementById("modal-form").querySelector('.modal-glass');
+    if (inner) inner.scrollTop = 0;
 };
 
 window.eliminarProducto = (id) => {
@@ -226,4 +264,9 @@ function limpiarForm() {
         if(pre) { pre.classList.add('hidden'); pre.src = ""; }
         if(zone) zone.classList.remove('has-image');
     }
+    // Limpiar variantes
+    const varContainer = document.getElementById('variantes-container');
+    if (varContainer) varContainer.innerHTML = '';
+    const varEmpty = document.getElementById('variantes-empty');
+    if (varEmpty) varEmpty.style.display = 'block';
 }
