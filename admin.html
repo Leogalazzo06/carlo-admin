@@ -74,7 +74,135 @@
         .btn-loading .btn-text { display: none; }
         .btn-loading .btn-spinner { display: block; }
 
-        /* Modales de confirmación */
+        /* ── Modal principal ── */
+        #modal-form {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88);
+            backdrop-filter: blur(16px);
+            z-index: 110;
+            display: flex;
+            align-items: flex-end;       /* siempre desde abajo en mobile */
+            justify-content: center;
+        }
+        #modal-form.hidden { display: none; }
+
+        #modal-inner {
+            width: 100%;
+            max-width: 480px;
+            max-height: 88svh;           /* deja espacio para status bar */
+            max-height: 88vh;
+            background: #0f0f0f;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-bottom: none;
+            border-radius: 1.75rem 1.75rem 0 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;            /* el scroll va SOLO en #modal-body */
+        }
+
+        /* En pantallas grandes: centrado, redondeado completo */
+        @media (min-width: 640px) {
+            #modal-form { align-items: center; }
+            #modal-inner {
+                border-radius: 1.75rem;
+                border-bottom: 1px solid rgba(255,255,255,0.07);
+                max-height: 90vh;
+            }
+        }
+
+        #modal-header {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.25rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        #modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            /* scrollbar fino */
+            scrollbar-width: thin;
+            scrollbar-color: #d4af37 transparent;
+        }
+        #modal-body::-webkit-scrollbar { width: 3px; }
+        #modal-body::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 99px; }
+        #modal-footer {
+            flex-shrink: 0;
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.9rem 1.25rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* Campos del formulario */
+        .field-label {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+        .field-input {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.875rem;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.875rem;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.2s;
+
+        }
+        .field-input:focus { border-color: #d4af37; }
+        select.field-input { background-color: #111; }
+        textarea.field-input { resize: none; }
+
+        /* Zonas de imagen */
+        .img-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        @media (min-width: 400px) {
+            .img-grid { grid-template-columns: repeat(6, 1fr); }
+        }
+
+        /* Variante row */
+        .variante-row {
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 0.875rem;
+            padding: 0.6rem 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .variante-row input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.625rem;
+            padding: 0.5rem 0.6rem;
+            font-size: 0.8rem;
+            color: #fff;
+            outline: none;
+        }
+        .variante-row input:focus { border-color: #d4af37; }
+        .variante-nombre { flex: 1; min-width: 0; }
+        .variante-precio-wrap { position: relative; flex-shrink: 0; }
+        .variante-precio-wrap span { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-size: 0.75rem; pointer-events: none; }
+        .variante-precio { width: 6.5rem; padding-left: 1.25rem !important; }
+
+        /* fix tailwind border-white/8 */
+        .border-white\/8 { border-color: rgba(255,255,255,0.08); }
+
         .confirm-modal {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.85);
@@ -163,6 +291,7 @@
                     <option value="Pulseras">Pulseras</option>
                     <option value="Cadenas">Cadenas</option>
                     <option value="Llaveros">Llaveros</option>
+                    <option value="Perfumeros">Perfumeros</option>
                 </select>
                 <!-- Filtro disponibilidad -->
                 <select id="filtro-disponibilidad" onchange="aplicarFiltros()" class="bg-[#111] border border-white/10 rounded-full py-3 px-5 text-xs outline-none focus:border-[#d4af37] transition-all text-gray-300 appearance-none cursor-pointer">
@@ -184,63 +313,124 @@
         <div id="admin-productos" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 hidden"></div>
     </main>
 
-    <div id="modal-form" class="fixed inset-0 bg-black/90 hidden z-[110] flex items-start justify-center p-4 pt-8 backdrop-blur-md">
-        <div class="modal-glass rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl my-auto overflow-y-auto max-h-[90vh]">
-            <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
-                <h2 id="modal-titulo" class="text-2xl font-luxury gold-text">Nuevo producto</h2>
-                <button onclick="cerrarModalAdmin()" class="text-gray-500 hover:text-white text-3xl">&times;</button>
+    <div id="modal-form" class="hidden">
+        <div id="modal-inner">
+
+            <!-- HEADER -->
+            <div id="modal-header">
+                <h2 id="modal-titulo" class="font-luxury gold-text" style="font-size:1.2rem; line-height:1.2;">Nuevo producto</h2>
+                <button onclick="cerrarModalAdmin()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:#9ca3af;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#9ca3af'">&times;</button>
             </div>
 
-            <input type="hidden" id="edit-id">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="md:col-span-2">
-                    <label class="text-[9px] font-bold uppercase text-gray-500 tracking-widest mb-2 block">Nombre del Modelo</label>
-                    <input type="text" id="nombre" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d4af37] text-white">
-                </div>
+            <!-- BODY (único scroll) -->
+            <div id="modal-body">
+                <input type="hidden" id="edit-id">
 
+                <!-- Nombre -->
                 <div>
-                    <label class="text-[9px] font-bold uppercase text-gray-500 tracking-widest mb-2 block">Precio ($)</label>
-                    <input type="number" id="precio" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d4af37] text-white">
+                    <label class="field-label">Nombre del Modelo</label>
+                    <input type="text" id="nombre" class="field-input">
                 </div>
 
+                <!-- Precio + Categoría -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.625rem;">
+                    <div>
+                        <label class="field-label">Precio ($)</label>
+                        <input type="number" id="precio" class="field-input">
+                    </div>
+                    <div>
+                        <label class="field-label">Categoría</label>
+                        <select id="categoria" class="field-input">
+                            <option value="" disabled selected>Elegir categoría</option>
+                            <option value="Relojes">Relojes</option>
+                            <option value="Pulseras">Pulseras</option>
+                            <option value="Cadenas">Cadenas</option>
+                            <option value="Llaveros">Llaveros</option>
+                            <option value="Perfumeros">Perfumeros</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Imágenes: 3 col en mobile chico, 6 col en mobile normal+ -->
                 <div>
-                    <label class="text-[9px] font-bold uppercase text-gray-500 tracking-widest mb-2 block">Categoría</label>
-                    <select id="categoria" class="w-full bg-[#111] border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d4af37] text-white appearance-none">
-                        <option value="Relojes">Relojes</option>
-                        <option value="Pulseras">Pulseras</option>
-                        <option value="Cadenas">Cadenas</option>
-                        <option value="Llaveros">Llaveros</option>
-                    </select>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label class="text-[9px] font-bold uppercase text-gray-500 tracking-widest mb-4 block">Imágenes</label>
-                    <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
-                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group" id="zone-1" onclick="triggerFileInput(1)">
-                            <input type="file" id="file-input-1" class="hidden" accept="image/*" onchange="handleFileSelect(event, 1)">
-                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37]"></i>
+                    <label class="field-label">Imágenes</label>
+                    <div class="img-grid">
+                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer" id="zone-1" onclick="triggerFileInput(1)">
+                            <input type="file" id="file-input-1" class="hidden" accept="image/*" onchange="handleFileSelect(event,1)">
+                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37] text-xs"></i>
                             <img id="preview-1" class="absolute inset-0 w-full h-full object-cover hidden">
                             <input type="hidden" id="img1">
                         </div>
-                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group" id="zone-2" onclick="triggerFileInput(2)">
-                            <input type="file" id="file-input-2" class="hidden" accept="image/*" onchange="handleFileSelect(event, 2)">
-                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37]"></i>
+                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer" id="zone-2" onclick="triggerFileInput(2)">
+                            <input type="file" id="file-input-2" class="hidden" accept="image/*" onchange="handleFileSelect(event,2)">
+                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37] text-xs"></i>
                             <img id="preview-2" class="absolute inset-0 w-full h-full object-cover hidden">
                             <input type="hidden" id="img2">
                         </div>
+                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer" id="zone-3" onclick="triggerFileInput(3)">
+                            <input type="file" id="file-input-3" class="hidden" accept="image/*" onchange="handleFileSelect(event,3)">
+                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37] text-xs"></i>
+                            <img id="preview-3" class="absolute inset-0 w-full h-full object-cover hidden">
+                            <input type="hidden" id="img3">
                         </div>
+                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer" id="zone-4" onclick="triggerFileInput(4)">
+                            <input type="file" id="file-input-4" class="hidden" accept="image/*" onchange="handleFileSelect(event,4)">
+                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37] text-xs"></i>
+                            <img id="preview-4" class="absolute inset-0 w-full h-full object-cover hidden">
+                            <input type="hidden" id="img4">
+                        </div>
+                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer" id="zone-5" onclick="triggerFileInput(5)">
+                            <input type="file" id="file-input-5" class="hidden" accept="image/*" onchange="handleFileSelect(event,5)">
+                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37] text-xs"></i>
+                            <img id="preview-5" class="absolute inset-0 w-full h-full object-cover hidden">
+                            <input type="hidden" id="img5">
+                        </div>
+                        <div class="upload-zone rounded-xl relative overflow-hidden flex items-center justify-center group cursor-pointer" id="zone-6" onclick="triggerFileInput(6)">
+                            <input type="file" id="file-input-6" class="hidden" accept="image/*" onchange="handleFileSelect(event,6)">
+                            <i class="fa-solid fa-plus text-gray-700 group-hover:text-[#d4af37] text-xs"></i>
+                            <img id="preview-6" class="absolute inset-0 w-full h-full object-cover hidden">
+                            <input type="hidden" id="img6">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="md:col-span-2 space-y-4">
-                    <label class="text-[9px] font-bold uppercase text-gray-500 tracking-widest block">Detalles</label>
-                    <textarea id="descripcion" rows="3" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d4af37] text-white" placeholder="Descripción del producto..."></textarea>
-                    <textarea id="caracteristicas" rows="3" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d4af37] text-white" placeholder="Materiales, tamaño"></textarea>
+                <!-- Descripción -->
+                <div>
+                    <label class="field-label">Descripción</label>
+                    <textarea id="descripcion" rows="2" class="field-input" placeholder="Descripción del producto..."></textarea>
                 </div>
 
-                <div class="md:col-span-2 bg-white/5 p-6 rounded-3xl border border-white/5 flex items-center justify-between">
-                    <p class="text-[10px] font-bold uppercase tracking-widest">Disponible en Stock</p>
-                    <label class="relative inline-flex items-center cursor-pointer">
+                <!-- Características -->
+                <div>
+                    <label class="field-label">Materiales / Tamaño</label>
+                    <textarea id="caracteristicas" rows="2" class="field-input" placeholder="Ej: Acero 316L, 42mm..."></textarea>
+                </div>
+
+                <!-- Oferta -->
+                <div style="background:rgba(212,175,55,0.04);border:1px solid rgba(212,175,55,0.15);border-radius:0.875rem;padding:0.7rem 0.9rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;" id="oferta-header">
+                        <div>
+                            <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#d4af37;">En oferta</p>
+                            <p style="font-size:9px;color:#6b7280;margin-top:1px;">Muestra badge y precio tachado en la tienda</p>
+                        </div>
+                        <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;">
+                            <input type="checkbox" id="enOferta" class="sr-only toggle-input" onchange="toggleDescuento()">
+                            <div class="w-11 h-6 bg-gray-800 rounded-full toggle-track transition-all">
+                                <div class="absolute top-[2px] left-[2px] bg-gray-500 w-5 h-5 rounded-full toggle-thumb transition-all"></div>
+                            </div>
+                        </label>
+                    </div>
+                    <div id="campo-descuento" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(212,175,55,0.12);">
+                        <label class="field-label" style="color:#d4af37;">Precio de oferta ($)</label>
+                        <input type="number" id="precioOferta" min="1" placeholder="Ej: 2000" class="field-input" style="border-color:rgba(212,175,55,0.3);">
+                        <p id="descuento-preview" style="font-size:9px;color:#6b7280;margin-top:5px;">El precio original se mostrará tachado junto al precio de oferta.</p>
+                    </div>
+                </div>
+
+                <!-- Stock -->
+                <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:0.875rem;padding:0.7rem 0.9rem;">
+                    <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#d1d5db;">Disponible en Stock</p>
+                    <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;">
                         <input type="checkbox" id="disponible" class="sr-only toggle-input" checked>
                         <div class="w-11 h-6 bg-gray-800 rounded-full toggle-track transition-all">
                             <div class="absolute top-[2px] left-[2px] bg-gray-500 w-5 h-5 rounded-full toggle-thumb transition-all"></div>
@@ -248,26 +438,34 @@
                     </label>
                 </div>
 
-                <!-- VARIANTES -->
-                <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-3">
-                        <label class="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Variantes <span class="text-gray-700 normal-case tracking-normal font-normal">(opcional — para modelos con distintos precios)</span></label>
-                        <button type="button" onclick="agregarVariante()" class="flex items-center gap-1.5 text-[#d4af37] text-[9px] font-black uppercase tracking-widest hover:text-white transition-colors">
-                            <i class="fa-solid fa-plus text-[8px]"></i> Agregar
+                <!-- Variantes -->
+                <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                        <div>
+                            <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6b7280;">Variantes</span>
+                            <span style="font-size:9px;color:#374151;margin-left:4px;">· opcional</span>
+                        </div>
+                        <button type="button" onclick="agregarVariante()"
+                            style="display:flex;align-items:center;gap:5px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.25);color:#d4af37;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;padding:5px 12px;border-radius:99px;cursor:pointer;transition:background 0.2s;"
+                            onmouseover="this.style.background='rgba(212,175,55,0.2)'" onmouseout="this.style.background='rgba(212,175,55,0.1)'">
+                            <i class="fa-solid fa-plus" style="font-size:8px;"></i> Agregar
                         </button>
                     </div>
-                    <div id="variantes-container" class="space-y-2"></div>
-                    <p id="variantes-empty" class="text-gray-700 text-[10px] italic py-2">Sin variantes. El precio principal se usará como único precio.</p>
+                    <div id="variantes-container" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+                    <p id="variantes-empty" style="color:#374151;font-size:10px;font-style:italic;padding:4px 0;">Sin variantes — se usa el precio principal.</p>
                 </div>
-            </div>
 
-            <div class="mt-10 flex gap-4">
-                <button onclick="cerrarModalAdmin()" class="flex-1 py-4 text-gray-500 font-bold uppercase text-[10px] tracking-widest">Cancelar</button>
-                <button onclick="guardarProducto()" id="btn-guardar" class="flex-[2] bg-[#d4af37] text-black py-4 rounded-full font-black uppercase text-[10px] tracking-widest shadow-xl transition-all">
+            </div><!-- /modal-body -->
+
+            <!-- FOOTER -->
+            <div id="modal-footer">
+                <button onclick="cerrarModalAdmin()" style="flex:1;padding:0.7rem;color:#6b7280;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;border:1px solid rgba(255,255,255,0.1);border-radius:99px;background:transparent;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">Cancelar</button>
+                <button onclick="guardarProducto()" id="btn-guardar" style="flex:2;padding:0.7rem;background:#d4af37;color:#000;font-weight:900;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;border:none;border-radius:99px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='#d4af37'">
                     <span class="btn-text">Guardar producto</span>
                     <div class="btn-spinner"></div>
                 </button>
             </div>
+
         </div>
     </div>
 
@@ -348,26 +546,52 @@
             }
         }
 
+        function toggleDescuento() {
+            const on = document.getElementById('enOferta').checked;
+            document.getElementById('campo-descuento').style.display = on ? 'block' : 'none';
+            if (!on) document.getElementById('precioOferta').value = '';
+        }
+
+        function actualizarPreviewDescuento() {
+            const precioOriginal = Number(document.getElementById('precio')?.value) || 0;
+            const precioOferta   = Number(document.getElementById('precioOferta')?.value) || 0;
+            const preview = document.getElementById('descuento-preview');
+            if (!preview) return;
+            if (precioOriginal > 0 && precioOferta > 0 && precioOferta < precioOriginal) {
+                const pct = Math.round((1 - precioOferta / precioOriginal) * 100);
+                preview.textContent = `Ahorro del ${pct}% — de $${precioOriginal.toLocaleString()} a $${precioOferta.toLocaleString()}`;
+                preview.style.color = '#d4af37';
+            } else if (precioOferta >= precioOriginal && precioOriginal > 0) {
+                preview.textContent = '⚠ El precio de oferta debe ser menor al precio original.';
+                preview.style.color = '#f87171';
+            } else {
+                preview.textContent = 'El precio original se mostrará tachado junto al precio de oferta.';
+                preview.style.color = '#6b7280';
+            }
+        }
+
+        document.addEventListener('input', e => {
+            if (e.target.id === 'precioOferta' || e.target.id === 'precio') actualizarPreviewDescuento();
+        });
+
         // --- VARIANTES ---
         function agregarVariante(nombre = '', precio = '') {
             const container = document.getElementById('variantes-container');
             const empty = document.getElementById('variantes-empty');
             if (empty) empty.style.display = 'none';
 
-            const idx = container.children.length;
             const row = document.createElement('div');
-            row.className = 'variante-row flex gap-2 items-center';
+            row.className = 'variante-row';
             row.innerHTML = `
-                <input type="text" placeholder="Nombre (ej: Acero, Oro, 20cm...)" value="${nombre}"
-                    class="flex-1 bg-white/5 border border-white/10 px-4 py-3 rounded-2xl text-sm outline-none focus:border-[#d4af37] text-white variante-nombre">
-                <div class="relative">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                    <input type="number" placeholder="Precio" value="${precio}"
-                        class="w-36 bg-white/5 border border-white/10 pl-8 pr-4 py-3 rounded-2xl text-sm outline-none focus:border-[#d4af37] text-white variante-precio">
+                <input type="text" placeholder="Nombre (ej: Acero, Oro...)" value="${nombre}" class="variante-nombre">
+                <div class="variante-precio-wrap">
+                    <span>$</span>
+                    <input type="number" placeholder="Precio" value="${precio}" class="variante-precio">
                 </div>
-                <button type="button" onclick="this.parentElement.remove(); actualizarEmptyVariantes()"
-                    class="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-red-400 border border-white/10 hover:border-red-400/30 rounded-xl transition-all flex-shrink-0">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
+                <button type="button" onclick="this.closest('.variante-row').remove(); actualizarEmptyVariantes()"
+                    style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:#4b5563;cursor:pointer;border-radius:0.5rem;transition:color 0.2s;"
+                    onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#4b5563'">
+                    <i class="fa-solid fa-trash-can" style="font-size:11px;"></i>
                 </button>
             `;
             container.appendChild(row);
