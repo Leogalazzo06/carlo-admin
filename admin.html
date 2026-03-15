@@ -112,6 +112,14 @@
             margin: 0 auto 1.25rem;
         }
     </style>
+     <!-- 1. Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1221">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RV Admin">
+<link rel="apple-touch-icon" href="https://res.cloudinary.com/dkqevscys/image/upload/v1773541304/m9c9n2hvpmmidixvek1s.webp">
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
 
@@ -445,7 +453,15 @@
             });
         });
     </script>
-
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('[PWA] SW registrado:', reg.scope))
+        .catch(err => console.warn('[PWA] Error al registrar SW:', err));
+    });
+  }
+</script>
     <script type="module" src="admin.js"></script>
 </body>
 </html>
