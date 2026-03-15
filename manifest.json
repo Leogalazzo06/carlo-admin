@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b1221",
-  "theme_color": "#0b1221",
+  "theme_color": ""#E5E4E2",
   "icons": [
     {
       "src": "https://res.cloudinary.com/dkqevscys/image/upload/v1773541304/m9c9n2hvpmmidixvek1s.webp",
