@@ -104,9 +104,8 @@ window.aplicarFiltros = aplicarFiltros;
 window.abrirModalCrear = () => {
     document.getElementById("modal-form").classList.remove("hidden");
     document.body.style.overflow = "hidden";
-    // Scroll al top del contenido interno
-    const inner = document.getElementById("modal-form").querySelector('.modal-glass');
-    if (inner) inner.scrollTop = 0;
+    const body = document.getElementById("modal-body");
+    if (body) body.scrollTop = 0;
     limpiarForm();
     if (typeof cargarVariantes === 'function') cargarVariantes([]);
     document.getElementById("modal-titulo").textContent = "Nuevo producto";
@@ -135,6 +134,8 @@ window.guardarProducto = async () => {
         descripcion: document.getElementById("descripcion").value,
         caracteristicas: document.getElementById("caracteristicas").value,
         disponible: document.getElementById("disponible").checked,
+        enOferta: document.getElementById("enOferta")?.checked || false,
+        precioOferta: document.getElementById("enOferta")?.checked ? (Number(document.getElementById("precioOferta")?.value) || 0) : 0,
         imagenes: imgs,
         variantes: typeof obtenerVariantes === 'function' ? obtenerVariantes() : [],
         fecha: Date.now()
@@ -173,6 +174,15 @@ window.editarProducto = (id) => {
     document.getElementById("descripcion").value = p.descripcion || "";
     document.getElementById("caracteristicas").value = p.caracteristicas || "";
     document.getElementById("disponible").checked = p.disponible !== false;
+    // Oferta
+    const enOfertaEl = document.getElementById("enOferta");
+    if (enOfertaEl) {
+        enOfertaEl.checked = p.enOferta === true;
+        if (typeof toggleDescuento === 'function') toggleDescuento();
+        const precioOfertaEl = document.getElementById("precioOferta");
+        if (precioOfertaEl) precioOfertaEl.value = p.precioOferta || '';
+        if (typeof actualizarPreviewDescuento === 'function') actualizarPreviewDescuento();
+    }
 
     // Cargar imágenes en los previews
     p.imagenes.forEach((url, i) => {
@@ -191,9 +201,8 @@ window.editarProducto = (id) => {
     document.getElementById("modal-form").classList.remove("hidden");
     document.body.style.overflow = "hidden";
     document.getElementById("modal-titulo").textContent = "Editar producto";
-    // Scroll al top del contenido interno
-    const inner = document.getElementById("modal-form").querySelector('.modal-glass');
-    if (inner) inner.scrollTop = 0;
+    const body = document.getElementById("modal-body");
+    if (body) body.scrollTop = 0;
 };
 
 window.eliminarProducto = (id) => {
@@ -255,6 +264,12 @@ function limpiarForm() {
     document.getElementById("descripcion").value = "";
     document.getElementById("caracteristicas").value = "";
     document.getElementById("disponible").checked = true;
+    document.getElementById("categoria").value = "";
+    // Oferta
+    const enOfertaEl = document.getElementById("enOferta");
+    if (enOfertaEl) { enOfertaEl.checked = false; if (typeof toggleDescuento === 'function') toggleDescuento(); }
+    const precioOfertaEl = document.getElementById("precioOferta");
+    if (precioOfertaEl) precioOfertaEl.value = '';
     // Resetear imágenes
     for(let i=1; i<=6; i++) {
         const inp = document.getElementById(`img${i}`);
