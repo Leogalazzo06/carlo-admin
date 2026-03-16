@@ -203,6 +203,38 @@
         /* fix tailwind border-white/8 */
         .border-white\/8 { border-color: rgba(255,255,255,0.08); }
 
+        /* Scroll to Top */
+        #scroll-top-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 1.5rem;
+            z-index: 99;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #d4af37;
+            border: none;
+            color: #000;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 24px rgba(212,175,55,0.3);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(12px);
+            transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s ease;
+        }
+        #scroll-top-btn.visible {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+        #scroll-top-btn:hover {
+            background: #fff;
+        }
+
         .confirm-modal {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.85);
@@ -677,6 +709,19 @@
             });
         });
     </script>
+    <!-- Scroll to Top -->
+    <button id="scroll-top-btn" title="Volver arriba" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <i class="fa-solid fa-chevron-up"></i>
+    </button>
+    <script>
+        (function() {
+            const btn = document.getElementById('scroll-top-btn');
+            window.addEventListener('scroll', () => {
+                btn.classList.toggle('visible', window.scrollY > 300);
+            }, { passive: true });
+        })();
+    </script>
+
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
