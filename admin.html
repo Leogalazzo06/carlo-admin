@@ -182,6 +182,11 @@
             border-radius: 0.875rem;
             padding: 0.6rem 0.75rem;
             display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+        .variante-main {
+            display: flex;
             gap: 0.5rem;
             align-items: center;
         }
@@ -199,6 +204,95 @@
         .variante-precio-wrap { position: relative; flex-shrink: 0; }
         .variante-precio-wrap span { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-size: 0.75rem; pointer-events: none; }
         .variante-precio { width: 6.5rem; padding-left: 1.25rem !important; }
+
+        /* Fila de oferta por variante */
+        .variante-oferta-row {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding-top: 0.4rem;
+            border-top: 1px solid rgba(212,175,55,0.12);
+            margin-top: 0.1rem;
+        }
+        .variante-oferta-row.visible { display: flex; }
+        .variante-oferta-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #d4af37;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .variante-precio-oferta-wrap { position: relative; flex-shrink: 0; }
+        .variante-precio-oferta-wrap span { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #d4af37; font-size: 0.75rem; pointer-events: none; }
+        .variante-precio-oferta { width: 7rem; padding-left: 1.25rem !important; border-color: rgba(212,175,55,0.35) !important; }
+        .variante-precio-oferta:focus { border-color: #d4af37 !important; }
+        .variante-descuento-preview {
+            font-size: 9px;
+            color: #6b7280;
+            flex: 1;
+            min-width: 0;
+        }
+        /* Botón toggle oferta en variante */
+        .variante-oferta-btn {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            padding: 5px 9px;
+            border-radius: 99px;
+            border: 1px solid rgba(212,175,55,0.25);
+            background: rgba(212,175,55,0.06);
+            color: #7a6520;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .variante-oferta-btn:hover { background: rgba(212,175,55,0.15); color: #d4af37; }
+        .variante-oferta-btn.activa {
+            background: rgba(212,175,55,0.15);
+            border-color: rgba(212,175,55,0.5);
+            color: #d4af37;
+        }
+
+        /* Botón de stock por variante */
+        .variante-stock-btn {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border-radius: 99px;
+            border: 1px solid;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .variante-stock-btn.con-stock {
+            background: rgba(52, 211, 153, 0.1);
+            border-color: rgba(52, 211, 153, 0.35);
+            color: #34d399;
+        }
+        .variante-stock-btn.con-stock:hover {
+            background: rgba(52, 211, 153, 0.2);
+        }
+        .variante-stock-btn.sin-stock {
+            background: rgba(248, 113, 113, 0.1);
+            border-color: rgba(248, 113, 113, 0.35);
+            color: #f87171;
+        }
+        .variante-stock-btn.sin-stock:hover {
+            background: rgba(248, 113, 113, 0.2);
+        }
 
         /* fix tailwind border-white/8 */
         .border-white\/8 { border-color: rgba(255,255,255,0.08); }
@@ -293,9 +387,9 @@
             <a href="#" class="flex items-center gap-4 p-4 bg-white/5 border border-[#d4af37]/30 rounded-2xl text-[#d4af37] font-bold text-xs uppercase tracking-widest">
                 <i class="fa-solid fa-gem"></i> Inventario
             </a>
-            <a href="https://carloessential.com.ar" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 p-4 text-slate-400 hover:text-white hover:bg-slate-800/30 rounded-2xl font-black italic uppercase text-[11px] tracking-wider transition-all">
-    <i class="fa-solid fa-shop text-sm"></i> Ver Tienda
-</a>
+            <a href="index.html" class="flex items-center gap-4 p-4 text-gray-500 hover:text-white transition-all text-xs uppercase tracking-widest">
+                <i class="fa-solid fa-eye"></i> Ver Tienda
+            </a>
             <button id="btn-logout" class="w-full flex items-center gap-4 p-4 text-red-900/60 hover:text-red-500 transition-all text-xs uppercase tracking-widest mt-10">
                 <i class="fa-solid fa-power-off"></i> Salir
             </button>
@@ -607,53 +701,142 @@
         });
 
         // --- VARIANTES ---
-        function agregarVariante(nombre = '', precio = '') {
+        window.agregarVariante = function(nombre = '', precio = '', disponible = true, enOferta = false, precioOferta = '') {
             const container = document.getElementById('variantes-container');
             const empty = document.getElementById('variantes-empty');
             if (empty) empty.style.display = 'none';
 
             const row = document.createElement('div');
             row.className = 'variante-row';
+
+            // Calcular preview de descuento inicial si corresponde
+            let previewTexto = 'Precio oferta (menor al precio base)';
+            let previewColor = '#6b7280';
+            if (enOferta && precioOferta && precio) {
+                const pct = Math.round((1 - Number(precioOferta) / Number(precio)) * 100);
+                if (pct > 0) {
+                    previewTexto = `Ahorro del ${pct}%`;
+                    previewColor = '#d4af37';
+                }
+            }
+
             row.innerHTML = `
-                <input type="text" placeholder="Nombre (ej: Acero, Oro...)" value="${nombre}" class="variante-nombre">
-                <div class="variante-precio-wrap">
-                    <span>$</span>
-                    <input type="number" placeholder="Precio" value="${precio}" class="variante-precio">
+                <!-- fila principal -->
+                <div class="variante-main">
+                    <input type="text" placeholder="Nombre (ej: Acero, Oro...)" value="${nombre}" class="variante-nombre">
+                    <div class="variante-precio-wrap">
+                        <span>$</span>
+                        <input type="number" placeholder="Precio" value="${precio}" class="variante-precio"
+                            oninput="actualizarPreviewVariante(this)">
+                    </div>
+                    <button type="button" onclick="toggleOfertaVariante(this)"
+                        class="variante-oferta-btn ${enOferta ? 'activa' : ''}"
+                        title="Agregar precio de oferta">
+                        <i class="fa-solid fa-tag" style="font-size:8px;"></i>
+                        <span>%</span>
+                    </button>
+                    <button type="button" onclick="toggleStockVariante(this)"
+                        class="variante-stock-btn ${disponible !== false ? 'con-stock' : 'sin-stock'}"
+                        data-disponible="${disponible !== false ? 'true' : 'false'}">
+                        <i class="fa-solid ${disponible !== false ? 'fa-circle-check' : 'fa-circle-xmark'}" style="font-size:9px;"></i>
+                        <span>${disponible !== false ? 'Stock' : 'Sin stock'}</span>
+                    </button>
+                    <button type="button" onclick="this.closest('.variante-row').remove(); actualizarEmptyVariantes()"
+                        style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:#4b5563;cursor:pointer;border-radius:0.5rem;transition:color 0.2s;"
+                        onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#4b5563'">
+                        <i class="fa-solid fa-trash-can" style="font-size:11px;"></i>
+                    </button>
                 </div>
-                <button type="button" onclick="this.closest('.variante-row').remove(); actualizarEmptyVariantes()"
-                    style="width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:#4b5563;cursor:pointer;border-radius:0.5rem;transition:color 0.2s;"
-                    onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#4b5563'">
-                    <i class="fa-solid fa-trash-can" style="font-size:11px;"></i>
-                </button>
+                <!-- fila de oferta (expandible) -->
+                <div class="variante-oferta-row ${enOferta ? 'visible' : ''}">
+                    <span class="variante-oferta-label"><i class="fa-solid fa-tag" style="font-size:8px;margin-right:3px;"></i> Precio oferta</span>
+                    <div class="variante-precio-oferta-wrap">
+                        <span>$</span>
+                        <input type="number" placeholder="0" value="${precioOferta || ''}" min="1"
+                            class="variante-precio-oferta"
+                            style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.35);border-radius:0.625rem;padding:0.5rem 0.6rem;font-size:0.8rem;color:#fff;outline:none;width:7rem;padding-left:1.25rem;"
+                            oninput="actualizarPreviewVariante(this)">
+                    </div>
+                    <span class="variante-descuento-preview" style="color:${previewColor};">${previewTexto}</span>
+                </div>
             `;
             container.appendChild(row);
-        }
+        };
 
-        function actualizarEmptyVariantes() {
+        window.toggleStockVariante = function(btn) {
+            const tieneStock = btn.dataset.disponible === 'true';
+            const nuevoEstado = !tieneStock;
+            btn.dataset.disponible = nuevoEstado ? 'true' : 'false';
+            btn.className = `variante-stock-btn ${nuevoEstado ? 'con-stock' : 'sin-stock'}`;
+            btn.querySelector('i').className = `fa-solid ${nuevoEstado ? 'fa-circle-check' : 'fa-circle-xmark'}`;
+            btn.querySelector('span').textContent = nuevoEstado ? 'Stock' : 'Sin stock';
+        };
+
+        window.toggleOfertaVariante = function(btn) {
+            const row = btn.closest('.variante-row');
+            const ofertaRow = row.querySelector('.variante-oferta-row');
+            const activa = ofertaRow.classList.toggle('visible');
+            btn.classList.toggle('activa', activa);
+            if (!activa) {
+                const input = ofertaRow.querySelector('input');
+                if (input) input.value = '';
+                const preview = ofertaRow.querySelector('.variante-descuento-preview');
+                if (preview) { preview.textContent = 'Precio oferta (menor al precio base)'; preview.style.color = '#6b7280'; }
+            }
+        };
+
+        window.actualizarPreviewVariante = function(inputEl) {
+            const row = inputEl.closest('.variante-row');
+            if (!row) return;
+            const precioBase   = Number(row.querySelector('.variante-precio')?.value) || 0;
+            const precioOferta = Number(row.querySelector('.variante-precio-oferta')?.value) || 0;
+            const preview      = row.querySelector('.variante-descuento-preview');
+            if (!preview) return;
+            if (precioBase > 0 && precioOferta > 0 && precioOferta < precioBase) {
+                const pct = Math.round((1 - precioOferta / precioBase) * 100);
+                preview.textContent = `Ahorro del ${pct}% — de $${precioBase.toLocaleString()} a $${precioOferta.toLocaleString()}`;
+                preview.style.color = '#d4af37';
+            } else if (precioOferta >= precioBase && precioBase > 0) {
+                preview.textContent = '⚠ Debe ser menor al precio base.';
+                preview.style.color = '#f87171';
+            } else {
+                preview.textContent = 'Precio oferta (menor al precio base)';
+                preview.style.color = '#6b7280';
+            }
+        };
+
+        window.actualizarEmptyVariantes = function() {
             const container = document.getElementById('variantes-container');
             const empty = document.getElementById('variantes-empty');
             if (empty) empty.style.display = container.children.length === 0 ? 'block' : 'none';
-        }
+        };
 
-        function obtenerVariantes() {
-            const rows = document.querySelectorAll('.variante-row');
+        window.obtenerVariantes = function() {
+            const container = document.getElementById('variantes-container');
             const variantes = [];
-            rows.forEach(row => {
-                const nombre = row.querySelector('.variante-nombre').value.trim();
-                const precio = Number(row.querySelector('.variante-precio').value);
-                if (nombre && precio > 0) variantes.push({ nombre, precio });
+            Array.from(container.children).forEach(row => {
+                if (!row.classList.contains('variante-row')) return;
+                const nombre       = row.querySelector('.variante-nombre')?.value.trim();
+                const precio       = Number(row.querySelector('.variante-precio')?.value);
+                const stockBtn     = row.querySelector('.variante-stock-btn');
+                const disponible   = stockBtn ? stockBtn.dataset.disponible !== 'false' : true;
+                const ofertaRow    = row.querySelector('.variante-oferta-row');
+                const ofertaActiva = ofertaRow?.classList.contains('visible') || false;
+                const precioOferta = ofertaActiva ? (Number(row.querySelector('.variante-precio-oferta')?.value) || 0) : 0;
+                const enOferta     = ofertaActiva && precioOferta > 0 && precioOferta < precio;
+                if (nombre && precio > 0) variantes.push({ nombre, precio, disponible, enOferta, precioOferta: enOferta ? precioOferta : 0 });
             });
             return variantes;
         }
 
-        function cargarVariantes(variantes) {
+        window.cargarVariantes = function(variantes) {
             const container = document.getElementById('variantes-container');
             container.innerHTML = '';
             actualizarEmptyVariantes();
             if (variantes && variantes.length > 0) {
-                variantes.forEach(v => agregarVariante(v.nombre, v.precio));
+                variantes.forEach(v => agregarVariante(v.nombre, v.precio, v.disponible !== false, v.enOferta === true, v.precioOferta || ''));
             }
-        }
+        };
     </script>
 
     <!-- Modal: Cerrar sesión -->
