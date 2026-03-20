@@ -418,6 +418,8 @@
                     <option value="Cadenas">Cadenas</option>
                     <option value="Llaveros">Llaveros</option>
                     <option value="Perfumeros">Perfumeros</option>
+                    <option value="Aros">Aros</option>
+                    <option value="Billeteras">Billeteras</option>
                 </select>
                 <!-- Filtro disponibilidad -->
                 <select id="filtro-disponibilidad" onchange="aplicarFiltros()" class="bg-[#111] border border-white/10 rounded-full py-3 px-5 text-xs outline-none focus:border-[#d4af37] transition-all text-gray-300 appearance-none cursor-pointer">
@@ -473,6 +475,8 @@
                             <option value="Cadenas">Cadenas</option>
                             <option value="Llaveros">Llaveros</option>
                             <option value="Perfumeros">Perfumeros</option>
+                            <option value="Aros">Aros</option>
+                            <option value="Billeteras">Billeteras</option>
                         </select>
                     </div>
                 </div>
@@ -558,6 +562,20 @@
                     <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#d1d5db;">Disponible en Stock</p>
                     <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;">
                         <input type="checkbox" id="disponible" class="sr-only toggle-input" checked>
+                        <div class="w-11 h-6 bg-gray-800 rounded-full toggle-track transition-all">
+                            <div class="absolute top-[2px] left-[2px] bg-gray-500 w-5 h-5 rounded-full toggle-thumb transition-all"></div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Badge Nuevo -->
+                <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:0.875rem;padding:0.7rem 0.9rem;">
+                    <div>
+                        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#d1d5db;">Badge "Nuevo"</p>
+                        <p style="font-size:9px;color:#6b7280;margin-top:1px;">Muestra etiqueta blanca ✦ Nuevo en la tienda</p>
+                    </div>
+                    <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;">
+                        <input type="checkbox" id="esNuevo" class="sr-only toggle-input">
                         <div class="w-11 h-6 bg-gray-800 rounded-full toggle-track transition-all">
                             <div class="absolute top-[2px] left-[2px] bg-gray-500 w-5 h-5 rounded-full toggle-thumb transition-all"></div>
                         </div>
@@ -701,7 +719,7 @@
         });
 
         // --- VARIANTES ---
-        window.agregarVariante = function(nombre = '', precio = '', disponible = true, enOferta = false, precioOferta = '') {
+        window.agregarVariante = function(nombre = '', precio = '', disponible = true, enOferta = false, precioOferta = '', imagen = '') {
             const container = document.getElementById('variantes-container');
             const empty = document.getElementById('variantes-empty');
             if (empty) empty.style.display = 'none';
@@ -720,9 +738,19 @@
                 }
             }
 
+            const uniqueId = 'vimg_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+
             row.innerHTML = `
                 <!-- fila principal -->
                 <div class="variante-main">
+                    <!-- Zona de imagen de variante -->
+                    <div style="position:relative;flex-shrink:0;width:40px;height:40px;border-radius:0.5rem;overflow:hidden;border:1px dashed rgba(212,175,55,0.35);background:rgba(255,255,255,0.03);cursor:pointer;display:flex;align-items:center;justify-content:center;"
+                         onclick="document.getElementById('${uniqueId}').click()" title="Foto de esta variante">
+                        <input type="file" id="${uniqueId}" class="hidden" accept="image/*" onchange="subirImagenVariante(event, this)">
+                        <i class="fa-solid fa-image" style="font-size:11px;color:#4b5563;" id="${uniqueId}_icon"></i>
+                        <img id="${uniqueId}_preview" src="${imagen || ''}" class="${imagen ? '' : 'hidden'} absolute inset-0 w-full h-full object-cover" style="border-radius:0.5rem;">
+                        <input type="hidden" id="${uniqueId}_url" value="${imagen || ''}">
+                    </div>
                     <input type="text" placeholder="Nombre (ej: Acero, Oro...)" value="${nombre}" class="variante-nombre">
                     <div class="variante-precio-wrap">
                         <span>$</span>
@@ -811,6 +839,43 @@
             if (empty) empty.style.display = container.children.length === 0 ? 'block' : 'none';
         };
 
+        window.subirImagenVariante = async function(e, inputEl) {
+            const fileOriginal = e.target.files[0];
+            if (!fileOriginal) return;
+
+            const zone = inputEl.closest('div[onclick]');
+            const icon = zone ? zone.querySelector('i') : null;
+            const uniqueId = inputEl.id;
+
+            if (zone) zone.style.opacity = '0.5';
+            if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+
+            try {
+                const fileWebP = await convertirAWebP(fileOriginal);
+                const formData = new FormData();
+                formData.append("file", fileWebP);
+                formData.append("upload_preset", "uploads");
+
+                const res  = await fetch("https://api.cloudinary.com/v1_1/dkqevscys/image/upload", { method: "POST", body: formData });
+                const data = await res.json();
+
+                if (!data.secure_url) throw new Error(data.error?.message || 'Sin URL');
+
+                document.getElementById(`${uniqueId}_url`).value = data.secure_url;
+                const prev = document.getElementById(`${uniqueId}_preview`);
+                if (prev) {
+                    prev.src = data.secure_url;
+                    prev.classList.remove('hidden');
+                }
+                if (zone) { zone.style.border = '1px solid rgba(212,175,55,0.7)'; }
+            } catch(err) {
+                alert(`Error subiendo imagen de variante: ${err.message}`);
+            } finally {
+                if (zone) zone.style.opacity = '1';
+                if (icon) icon.className = 'fa-solid fa-image';
+            }
+        };
+
         window.obtenerVariantes = function() {
             const container = document.getElementById('variantes-container');
             const variantes = [];
@@ -824,7 +889,10 @@
                 const ofertaActiva = ofertaRow?.classList.contains('visible') || false;
                 const precioOferta = ofertaActiva ? (Number(row.querySelector('.variante-precio-oferta')?.value) || 0) : 0;
                 const enOferta     = ofertaActiva && precioOferta > 0 && precioOferta < precio;
-                if (nombre && precio > 0) variantes.push({ nombre, precio, disponible, enOferta, precioOferta: enOferta ? precioOferta : 0 });
+                // Imagen de variante (desde el hidden input _url dentro del zone)
+                const urlInput     = row.querySelector('input[id$="_url"]');
+                const imagen       = urlInput ? urlInput.value : '';
+                if (nombre && precio > 0) variantes.push({ nombre, precio, disponible, enOferta, precioOferta: enOferta ? precioOferta : 0, imagen });
             });
             return variantes;
         }
@@ -834,7 +902,7 @@
             container.innerHTML = '';
             actualizarEmptyVariantes();
             if (variantes && variantes.length > 0) {
-                variantes.forEach(v => agregarVariante(v.nombre, v.precio, v.disponible !== false, v.enOferta === true, v.precioOferta || ''));
+                variantes.forEach(v => agregarVariante(v.nombre, v.precio, v.disponible !== false, v.enOferta === true, v.precioOferta || '', v.imagen || ''));
             }
         };
     </script>
@@ -916,4 +984,4 @@
 </script>
     <script type="module" src="admin.js"></script>
 </body>
-</html>
+</html> 
