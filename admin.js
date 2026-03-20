@@ -151,6 +151,7 @@ window.guardarProducto = async () => {
         if(id) {
             await updateDoc(doc(db, "products", id), datos);
         } else {
+            datos.fechaCreacion = Date.now();   // solo al crear, nunca al editar
             await addDoc(collection(db, "products"), datos);
         }
         cerrarModalAdmin();
