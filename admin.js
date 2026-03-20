@@ -134,6 +134,7 @@ window.guardarProducto = async () => {
         descripcion: document.getElementById("descripcion").value,
         caracteristicas: document.getElementById("caracteristicas").value,
         disponible: document.getElementById("disponible").checked,
+        esNuevo: document.getElementById("esNuevo")?.checked || false,
         enOferta: document.getElementById("enOferta")?.checked || false,
         precioOferta: document.getElementById("enOferta")?.checked ? (Number(document.getElementById("precioOferta")?.value) || 0) : 0,
         imagenes: imgs,
@@ -174,6 +175,9 @@ window.editarProducto = (id) => {
     document.getElementById("descripcion").value = p.descripcion || "";
     document.getElementById("caracteristicas").value = p.caracteristicas || "";
     document.getElementById("disponible").checked = p.disponible !== false;
+    // Badge Nuevo
+    const esNuevoEl = document.getElementById("esNuevo");
+    if (esNuevoEl) esNuevoEl.checked = p.esNuevo === true;
     // Oferta
     const enOfertaEl = document.getElementById("enOferta");
     if (enOfertaEl) {
@@ -264,6 +268,9 @@ function limpiarForm() {
     document.getElementById("descripcion").value = "";
     document.getElementById("caracteristicas").value = "";
     document.getElementById("disponible").checked = true;
+    // Badge Nuevo
+    const esNuevoEl2 = document.getElementById("esNuevo");
+    if (esNuevoEl2) esNuevoEl2.checked = false;
     document.getElementById("categoria").value = "";
     // Oferta
     const enOfertaEl = document.getElementById("enOferta");
