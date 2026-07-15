@@ -150,12 +150,18 @@ window.guardarProducto = async () => {
     try {
         if(id) {
             await updateDoc(doc(db, "products", id), datos);
+            // Actualizamos el producto en memoria en vez de volver a pedir
+            // todo a Firestore, así no se muestra el loader ni se pierde
+            // la posición de scroll en la que estaba el usuario.
+            const idx = productos.findIndex(p => p.id === id);
+            if (idx !== -1) productos[idx] = { ...productos[idx], ...datos };
         } else {
             datos.fechaCreacion = Date.now();   // solo al crear, nunca al editar
-            await addDoc(collection(db, "products"), datos);
+            const docRef = await addDoc(collection(db, "products"), datos);
+            productos.push({ id: docRef.id, ...datos });
         }
         cerrarModalAdmin();
-        cargarProductos();
+        aplicarFiltros();
     } catch(e) {
         alert("Error al guardar en Carlo Essential");
     } finally {
@@ -228,8 +234,12 @@ window.eliminarProducto = (id) => {
         btnClone.classList.add("btn-loading");
         try {
             await deleteDoc(doc(db, "products", id));
+            // Igual que al guardar: sacamos el producto de la lista en
+            // memoria y re-renderizamos, sin volver a pedir todo a Firestore
+            // ni mostrar el loader.
+            productos = productos.filter(p => p.id !== id);
             cerrarModalConfirm("modal-eliminar");
-            cargarProductos();
+            aplicarFiltros();
         } catch(e) {
             alert("Error al eliminar");
         } finally {
