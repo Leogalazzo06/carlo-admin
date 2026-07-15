@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rv-admin-v4';
+const CACHE_NAME = 'rv-admin-v5';
 
 const PRECACHE_URLS = [
   'login.html',
