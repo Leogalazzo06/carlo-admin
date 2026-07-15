@@ -204,6 +204,17 @@
         .variante-precio-wrap span { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-size: 0.75rem; pointer-events: none; }
         .variante-precio { width: 6.5rem; padding-left: 1.25rem !important; }
 
+        /* En pantallas angostas (celular) el modal ocupa todo el ancho del
+           viewport en vez de los 480px que tiene en desktop, así que la fila
+           de la variante (imagen + nombre + precio + botones oferta/stock/borrar)
+           no entra en una sola línea: el nombre terminaba aplastado a casi 0px.
+           Con flex-wrap y un mínimo en el nombre, el navegador la parte sola
+           en dos líneas: imagen+nombre+precio arriba, botones abajo. */
+        @media (max-width: 480px) {
+            .variante-main { flex-wrap: wrap; }
+            .variante-nombre { flex: 1 1 auto; min-width: 100px; }
+        }
+
         /* Fila de oferta por variante */
         .variante-oferta-row {
             display: none;
